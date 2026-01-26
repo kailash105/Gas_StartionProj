@@ -16,7 +16,7 @@ const ReadingForm = ({ initialDate, onClose }) => {
         if (existingReading) {
             const entryMap = {};
             existingReading.pumps.forEach(p => {
-                entryMap[p.pumpId] = { opening: p.opening, closing: p.closing };
+                entryMap[p.pumpId] = { opening: p.opening, closing: p.closing, image: p.image };
             });
             setEntries(entryMap);
             setPrices({ petrol: existingReading.petrolPrice || 0, diesel: existingReading.dieselPrice || 0 });
@@ -73,7 +73,8 @@ const ReadingForm = ({ initialDate, onClose }) => {
                 type: pump.type,
                 opening: entries[pump.id].opening,
                 closing: entries[pump.id].closing,
-                usage
+                usage,
+                image: entries[pump.id].image
             };
         });
 
@@ -153,14 +154,14 @@ const ReadingForm = ({ initialDate, onClose }) => {
                             <div className="grid gap-4 md:grid-cols-2">
                                 {pumps.filter(p => p.type === type).map(pump => (
                                     <div key={pump.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                        <div className="flexjustify-between items-center mb-3">
+                                        <div className="flex justify-between items-center mb-3">
                                             <span className="font-semibold text-slate-700">{pump.name}</span>
                                             <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200 text-slate-500">
                                                 Usage: {calculateUsage(pump.id).toFixed(2)}
                                             </span>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-2 gap-3 mb-3">
                                             <div>
                                                 <label className="block text-xs text-slate-500 mb-1">Opening</label>
                                                 <input
@@ -181,6 +182,30 @@ const ReadingForm = ({ initialDate, onClose }) => {
                                                     step="0.01"
                                                 />
                                             </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs text-slate-500 mb-1">Meter Photo (Optional)</label>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => {
+                                                            handleChange(pump.id, 'image', reader.result);
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                                className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                            />
+                                            {entries[pump.id]?.image && (
+                                                <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
+                                                    <Save size={12} /> Image attached
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

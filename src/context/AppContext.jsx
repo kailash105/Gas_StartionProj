@@ -43,12 +43,18 @@ export const AppProvider = ({ children }) => {
         return saved ? JSON.parse(saved) : [];
     });
 
+    const [approvals, setApprovals] = useState(() => {
+        const saved = localStorage.getItem('gas_app_approvals');
+        return saved ? JSON.parse(saved) : [];
+    });
+
     // Persist state to localStorage on changes
     useEffect(() => { localStorage.setItem('gas_app_readings', JSON.stringify(readings)); }, [readings]);
     useEffect(() => { localStorage.setItem('gas_app_customers', JSON.stringify(customers)); }, [customers]);
     useEffect(() => { localStorage.setItem('gas_app_transactions', JSON.stringify(transactions)); }, [transactions]);
     useEffect(() => { localStorage.setItem('gas_app_staff', JSON.stringify(staff)); }, [staff]);
     useEffect(() => { localStorage.setItem('gas_app_expenses', JSON.stringify(expenses)); }, [expenses]);
+    useEffect(() => { localStorage.setItem('gas_app_approvals', JSON.stringify(approvals)); }, [approvals]);
 
     const value = {
         pumps,
@@ -56,7 +62,8 @@ export const AppProvider = ({ children }) => {
         customers, setCustomers,
         transactions, setTransactions,
         staff, setStaff,
-        expenses, setExpenses
+        expenses, setExpenses,
+        approvals, setApprovals
     };
 
     return (

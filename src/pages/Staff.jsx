@@ -3,13 +3,19 @@ import { Plus, Trash2, Wallet } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 const Staff = () => {
-    const { staff, setStaff } = useAppContext();
+    const { staff, setStaff, expenses } = useAppContext();
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         role: '',
         salary: ''
     });
+
+    const getAdvances = (staffId) => {
+        return expenses
+            .filter(e => e.type === 'SALARY_ADVANCE' && e.staffId === staffId)
+            .reduce((sum, e) => sum + e.amount, 0);
+    };
 
     const handleAddStaff = (e) => {
         e.preventDefault();
@@ -46,31 +52,46 @@ const Staff = () => {
                     <div className="p-8 text-center text-slate-500">No staff members added.</div>
                 ) : (
                     <div className="divide-y divide-slate-100">
-                        {staff.map(person => (
-                            <div key={person.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
-                                        <Wallet size={20} />
+                        {staff.map(person => {
+                            const advances = getAdvances(person.id);
+                            const netPayable = person.salary - advances;
+
+                            return (
+                                <div key={person.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-slate-50 gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                                            <Wallet size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-slate-800">{person.name}</h3>
+                                            <p className="text-xs text-slate-500">{person.role}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-semibold text-slate-800">{person.name}</h3>
-                                        <p className="text-xs text-slate-500">{person.role}</p>
+                                    <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
+                                        <div className="text-right">
+                                            <div className="text-xs text-slate-400 uppercase">Monthly Salary</div>
+                                            <div className="font-bold text-slate-800">₹{person.salary.toLocaleString()}</div>
+                                        </div>
+                                        {advances > 0 && (
+                                            <div className="text-right">
+                                                <div className="text-xs text-orange-500 uppercase font-bold">Advances</div>
+                                                <div className="font-bold text-orange-600">-₹{advances.toLocaleString()}</div>
+                                            </div>
+                                        )}
+                                        <div className="text-right">
+                                            <div className="text-xs text-green-600 uppercase font-bold">Net Payable</div>
+                                            <div className="font-bold text-green-600">₹{netPayable.toLocaleString()}</div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDelete(person.id)}
+                                            className="text-slate-400 hover:text-red-500 ml-2"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6">
-                                    <div className="text-right">
-                                        <div className="text-xs text-slate-400 uppercase">Monthly Salary</div>
-                                        <div className="font-bold text-slate-800">₹{person.salary.toLocaleString()}</div>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(person.id)}
-                                        className="text-slate-400 hover:text-red-500"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

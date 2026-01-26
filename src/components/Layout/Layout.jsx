@@ -10,6 +10,7 @@ const NAV_ITEMS = [
     { label: 'Customers', path: '/customers', icon: Users },
     { label: 'Staff', path: '/staff', icon: Wallet },
     { label: 'Expenses', path: '/expenses', icon: Banknote },
+    { label: 'Approvals', path: '/approvals', icon: Banknote }, // Using Banknote as icon for now, could use CheckSquare if available
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {

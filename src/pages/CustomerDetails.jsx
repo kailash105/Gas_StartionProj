@@ -12,12 +12,14 @@ const CustomerDetails = () => {
     const customer = customers.find(c => c.id === id);
     const customerTransactions = transactions.filter(t => t.customerId === id);
 
+    const [viewImageObj, setViewImageObj] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [formData, setFormData] = useState({
         type: 'FUEL', // FUEL or PAYMENT
         date: new Date().toISOString().split('T')[0],
         amount: '',
-        note: ''
+        note: '',
+        image: null
     });
 
     // Calculate totals
@@ -49,11 +51,25 @@ const CustomerDetails = () => {
 
         setTransactions([newTransaction, ...transactions]);
         setShowAddModal(false);
-        setFormData({ ...formData, amount: '', note: '' });
+        setFormData({ ...formData, amount: '', note: '', image: null });
     };
+
+    // ...
 
     return (
         <div>
+            {/* View Image Modal */}
+            {viewImageObj && (
+                <div
+                    className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+                    onClick={() => setViewImageObj(null)}
+                >
+                    <div className="bg-white p-2 rounded-xl max-w-2xl max-h-[90vh] overflow-auto">
+                        <img src={viewImageObj} alt="Receipt" className="w-full h-auto rounded-lg" />
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center gap-4 mb-6">
                 <button onClick={() => navigate('/customers')} className="p-2 hover:bg-slate-100 rounded-lg">
                     <ArrowLeft size={24} className="text-slate-600" />
@@ -99,6 +115,7 @@ const CustomerDetails = () => {
                                     <th className="px-6 py-3 font-medium">Type</th>
                                     <th className="px-6 py-3 font-medium">Note</th>
                                     <th className="px-6 py-3 font-medium text-right">Amount</th>
+                                    <th className="px-6 py-3 font-medium text-right">Receipt</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -125,6 +142,16 @@ const CustomerDetails = () => {
                                             )}>
                                                 {t.type === 'FUEL' ? '-' : '+'} ₹{t.amount.toLocaleString()}
                                             </td>
+                                            <td className="px-6 py-4 text-right">
+                                                {t.image && (
+                                                    <button
+                                                        onClick={() => setViewImageObj(t.image)}
+                                                        className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 text-xs"
+                                                    >
+                                                        <Banknote size={16} /> View
+                                                    </button>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                             </tbody>
@@ -139,7 +166,9 @@ const CustomerDetails = () => {
                     <div className="bg-white rounded-xl p-6 w-full max-w-md">
                         <h2 className="text-xl font-bold mb-4">Add Transaction</h2>
                         <form onSubmit={handleAddTransaction}>
+                            {/* ... existing fields ... */}
                             <div className="grid grid-cols-2 gap-4 mb-4">
+                                {/* ... transaction type buttons ... */}
                                 <button
                                     type="button"
                                     onClick={() => setFormData({ ...formData, type: 'FUEL' })}
@@ -165,6 +194,7 @@ const CustomerDetails = () => {
                             </div>
 
                             <div className="space-y-4">
+                                {/* ... existing inputs ... */}
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
                                     <input
@@ -196,6 +226,29 @@ const CustomerDetails = () => {
                                         className="w-full p-2 border border-slate-300 rounded"
                                         placeholder="Vehicle No, etc."
                                     />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Receipt/Proof (Optional)
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                    setFormData({ ...formData, image: reader.result });
+                                                };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                        className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    />
+                                    {formData.image && (
+                                        <p className="mt-1 text-xs text-green-600">Image attached</p>
+                                    )}
                                 </div>
                             </div>
 
