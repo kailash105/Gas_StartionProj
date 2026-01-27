@@ -20,12 +20,10 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-cover bg-center flex items-center justify-center p-4" style={{ backgroundImage: "url('/Background.jpg')" }}>
             <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-slate-200">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4">
-                        <Lock size={32} />
-                    </div>
+                    <img src="/Logo.png" alt="Gas Station Logo" className="w-32 h-32 object-contain mb-4" />
                     <h1 className="text-2xl font-bold text-slate-800">Admin Login</h1>
                     <p className="text-slate-500">Gas Station Management</p>
                 </div>

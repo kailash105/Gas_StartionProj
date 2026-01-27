@@ -12,6 +12,7 @@ import CustomerDetails from './pages/CustomerDetails';
 import Staff from './pages/Staff';
 import Expenses from './pages/Expenses';
 import Approvals from './pages/Approvals';
+import Attendance from './pages/Attendance';
 
 function App() {
   return (
@@ -73,6 +74,14 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Approvals />
+                </Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/attendance" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Attendance />
                 </Layout>
               </ProtectedRoute>
             } />

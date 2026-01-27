@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Fuel, Wallet, Banknote, AlertCircle, TrendingUp } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import AttendanceWidget from '../components/Dashboard/AttendanceWidget';
 
 const StatCard = ({ title, value, icon: Icon, color, subtext }) => (
     <div className={`bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden group hover:border-${color}-200 transition-colors`}>
@@ -103,31 +104,40 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Quick Links or Recent Activity could go here */}
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h3 className="font-bold text-slate-800 mb-4">Recent Transactions</h3>
-                    {transactions.length === 0 ? (
-                        <p className="text-slate-400 text-sm">No recent transactions</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {transactions.slice(0, 5).map(t => (
-                                <div key={t.id} className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
-                                    <div>
-                                        <span className={`font-medium ${t.type === 'FUEL' ? 'text-orange-600' : 'text-green-600'}`}>
-                                            {t.type}
-                                        </span>
-                                        <span className="text-slate-400 mx-2">•</span>
-                                        <span className="text-slate-600">{new Date(t.date).toLocaleDateString()}</span>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                {/* Main Content Area - 2/3 width */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Quick Actions or Recent Activity */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 className="font-bold text-slate-800 mb-4">Recent Transactions</h3>
+                        {transactions.length === 0 ? (
+                            <p className="text-slate-400 text-sm">No recent transactions</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {transactions.slice(0, 5).map(t => (
+                                    <div key={t.id} className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
+                                        <div>
+                                            <span className={`font-medium ${t.type === 'FUEL' ? 'text-orange-600' : 'text-green-600'}`}>
+                                                {t.type}
+                                            </span>
+                                            <span className="text-slate-400 mx-2">•</span>
+                                            <span className="text-slate-600">{new Date(t.date).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="font-bold text-slate-700">₹{t.amount.toLocaleString()}</div>
                                     </div>
-                                    <div className="font-bold text-slate-700">₹{t.amount.toLocaleString()}</div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    <button onClick={() => navigate('/customers')} className="w-full mt-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg">
-                        View All Customers
-                    </button>
+                                ))}
+                            </div>
+                        )}
+                        <button onClick={() => navigate('/customers')} className="w-full mt-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg">
+                            View All Customers
+                        </button>
+                    </div>
+                </div>
+
+                {/* Sidebar Area - 1/3 width */}
+                <div className="lg:col-span-1">
+                    <AttendanceWidget />
                 </div>
             </div>
         </div>

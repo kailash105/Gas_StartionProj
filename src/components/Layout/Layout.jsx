@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Fuel, Users, Wallet, Banknote, Menu, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, Fuel, Users, Wallet, Banknote, Menu, X, LogOut, CalendarCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import clsx from 'clsx';
 
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
     { label: 'Customers', path: '/customers', icon: Users },
     { label: 'Staff', path: '/staff', icon: Wallet },
     { label: 'Expenses', path: '/expenses', icon: Banknote },
+    { label: 'Attendance', path: '/attendance', icon: CalendarCheck },
     { label: 'Approvals', path: '/approvals', icon: Banknote }, // Using Banknote as icon for now, could use CheckSquare if available
 ];
 
@@ -33,9 +34,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
-                    <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                        Gas Station
-                    </span>
+                    <img src="/Logo.png" alt="Gas Station" className="h-12 object-contain" />
                     <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
                         <X size={24} />
                     </button>
@@ -126,7 +125,7 @@ export const Layout = ({ children }) => {
                     >
                         <Menu size={24} />
                     </button>
-                    <span className="ml-3 text-lg font-semibold text-slate-800">Gas Station</span>
+                    <img src="/Logo.png" alt="Gas Station" className="h-8 ml-3" />
                 </header>
 
                 {/* Main Content */}
