@@ -1,0 +1,60 @@
+Project Summary: Gas Station Management System
+================================================
+
+Overview
+--------
+This project is a React-based web application designed for managing a gas station's operations. It utilizes Vite as the build tool and Tailwind CSS for styling. The application includes features for managing readings, customers, staff, expenses, attendance, and leave requests.
+
+Technology Stack
+----------------
+- **Frontend Framework**: React 19
+- **Build Tool**: Vite 7
+- **Styling**: Tailwind CSS 4
+- **Routing**: React Router DOM 7
+- **Icons**: Lucide React
+- **Linting**: ESLint
+
+Project Structure
+-----------------
+Root Directory: /Users/kailashkhadarabad/Desktop/GAS
+
+Key Directories:
+- `src/`: Source code
+  - `components/`: Reusable UI components (Auth, Dashboard, Layout, Readings, etc.)
+  - `context/`: Global state management (AppContext, AuthContext)
+  - `pages/`: Application views/routes
+  - `assets/`: Static assets
+- `public/`: Public static files
+
+Key Features & Routes
+---------------------
+1.  **Authentication**:
+    - Login Page (`/`)
+    - Protected Routes mechanism
+
+2.  **Dashboard** (`/dashboard`):
+    - Main overview of the station's performance.
+
+3.  **Readings** (`/readings`):
+    - Manage pump/meter readings.
+
+4.  **Customers** (`/customers`, `/customers/:id`):
+    - Customer management and detailed views.
+    - Khata (ledger) entry management.
+
+5.  **Staff Management**:
+    - Staff List (`/staff`): Manage employees.
+    - Attendance (`/attendance`): Track daily attendance.
+    - Leaves (`/leaves`): Manage staff leave requests and approvals.
+
+6.  **Financials**:
+    - Expenses (`/expenses`): Track station expenses and staff advances.
+
+7.  **Approvals** (`/approvals`):
+    - System for approving various requests (likely related to expenses or data corrections).
+
+Configuration
+-------------
+- `vite.config.js`: Vite configuration.
+- `tailwind.config.js`: Tailwind CSS configuration.
+- `package.json`: Project dependencies and scripts.
