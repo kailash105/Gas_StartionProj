@@ -11,6 +11,7 @@ const NAV_ITEMS = [
     { label: 'Staff', path: '/staff', icon: Wallet },
     { label: 'Expenses', path: '/expenses', icon: Banknote },
     { label: 'Attendance', path: '/attendance', icon: CalendarCheck },
+    { label: 'Leaves', path: '/leaves', icon: CalendarCheck }, // Using CalendarCheck for Leaves as well
     { label: 'Approvals', path: '/approvals', icon: Banknote }, // Using Banknote as icon for now, could use CheckSquare if available
 ];
 

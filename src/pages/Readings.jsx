@@ -72,11 +72,17 @@ const Readings = () => {
                                     <div className="text-right">
                                         <div className="text-xs text-slate-400 uppercase">Petrol</div>
                                         <div className="font-bold text-orange-600">{reading.totalPetrol.toLocaleString()} L</div>
+                                        {reading.petrolPrice > 0 && (
+                                            <div className="text-[10px] text-slate-400">Rate: ₹{reading.petrolPrice}</div>
+                                        )}
                                     </div>
                                     <div className="w-px bg-slate-200 mx-2"></div>
                                     <div className="text-right">
                                         <div className="text-xs text-slate-400 uppercase">Diesel</div>
                                         <div className="font-bold text-blue-600">{reading.totalDiesel.toLocaleString()} L</div>
+                                        {reading.dieselPrice > 0 && (
+                                            <div className="text-[10px] text-slate-400">Rate: ₹{reading.dieselPrice}</div>
+                                        )}
                                     </div>
                                     <button
                                         onClick={(e) => handleDelete(e, reading.date)}
@@ -89,12 +95,21 @@ const Readings = () => {
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-4 pt-4 border-t border-slate-50">
-                                {reading.pumps.map(pump => (
-                                    <div key={pump.pumpId} className="bg-slate-50 p-2 rounded text-center">
-                                        <div className="text-[10px] text-slate-500 truncate">{pump.pumpName}</div>
-                                        <div className="font-medium text-slate-800 text-sm">{pump.usage}</div>
-                                    </div>
-                                ))}
+                                {reading.pumps.map(pump => {
+                                    const price = pump.type === 'Petrol' ? (reading.petrolPrice || 0) : (reading.dieselPrice || 0);
+                                    const amount = pump.usage * price;
+                                    return (
+                                        <div key={pump.pumpId} className="bg-slate-50 p-2 rounded text-center">
+                                            <div className="text-[10px] text-slate-500 truncate">{pump.pumpName}</div>
+                                            <div className="font-medium text-slate-800 text-sm">{pump.usage} L</div>
+                                            {amount > 0 && (
+                                                <div className={`text-[10px] font-semibold ${pump.type === 'Petrol' ? 'text-orange-600' : 'text-blue-600'}`}>
+                                                    ₹{amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     ))
