@@ -58,6 +58,12 @@ export const AppProvider = ({ children }) => {
         return saved ? JSON.parse(saved) : [];
     });
 
+    const [fuelIntakes, setFuelIntakes] = useState(() => {
+        const saved = localStorage.getItem('gas_app_fuel_intakes');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+
     // Persist state to localStorage on changes
     useEffect(() => { localStorage.setItem('gas_app_readings', JSON.stringify(readings)); }, [readings]);
     useEffect(() => { localStorage.setItem('gas_app_customers', JSON.stringify(customers)); }, [customers]);
@@ -67,6 +73,7 @@ export const AppProvider = ({ children }) => {
     useEffect(() => { localStorage.setItem('gas_app_approvals', JSON.stringify(approvals)); }, [approvals]);
     useEffect(() => { localStorage.setItem('gas_app_attendance', JSON.stringify(attendance)); }, [attendance]);
     useEffect(() => { localStorage.setItem('gas_app_leaves', JSON.stringify(leaves)); }, [leaves]);
+    useEffect(() => { localStorage.setItem('gas_app_fuel_intakes', JSON.stringify(fuelIntakes)); }, [fuelIntakes]);
 
     const value = {
         pumps,
@@ -77,7 +84,52 @@ export const AppProvider = ({ children }) => {
         expenses, setExpenses,
         approvals, setApprovals,
         attendance, setAttendance,
-        leaves, setLeaves
+        leaves, setLeaves,
+        fuelIntakes, setFuelIntakes,
+        addFuelIntake: (data) => setFuelIntakes(prev => [...prev, { ...data, id: Date.now() }]),
+        deleteFuelIntake: (id) => setFuelIntakes(prev => prev.filter(i => i.id !== id)),
+        getTankStats: () => {
+            const TANK_CAPACITY = { Petrol: 15000, Diesel: 20000 };
+
+            // Calculate total intake
+            let petrolIntake = 0;
+            let dieselIntake = 0;
+            fuelIntakes.forEach(i => {
+                if (i.type === 'Petrol') petrolIntake += Number(i.amount);
+                if (i.type === 'Diesel') dieselIntake += Number(i.amount);
+            });
+
+            // Calculate total usage from readings
+            let petrolUsage = 0;
+            let dieselUsage = 0;
+            readings.forEach(r => {
+                petrolUsage += (r.totalPetrol || 0);
+                dieselUsage += (r.totalDiesel || 0);
+            });
+
+            // Current Level = Intake - Usage
+            // If Intake is 0 (new app), we might want to assume full or allow negative?
+            // To make it friendly, if NO intake exists, we assume capacity is the starting point (Full) 
+            // OR we just show negative/zero and user must add intake.
+            // Let's assume Start Full if no intakes are recorded yet?
+            // No, better to force them to add an "Opening Stock" intake.
+
+            const currentPetrol = petrolIntake - petrolUsage;
+            const currentDiesel = dieselIntake - dieselUsage;
+
+            return {
+                petrol: {
+                    current: currentPetrol,
+                    capacity: TANK_CAPACITY.Petrol,
+                    percentage: Math.min(100, Math.max(0, (currentPetrol / TANK_CAPACITY.Petrol) * 100))
+                },
+                diesel: {
+                    current: currentDiesel,
+                    capacity: TANK_CAPACITY.Diesel,
+                    percentage: Math.min(100, Math.max(0, (currentDiesel / TANK_CAPACITY.Diesel) * 100))
+                }
+            };
+        }
     };
 
     return (

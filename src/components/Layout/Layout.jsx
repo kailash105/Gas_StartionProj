@@ -138,6 +138,14 @@ export const Layout = ({ children }) => {
 
                 <MobileBottomNav />
             </div>
+            {/* Background Watermark */}
+            <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.15] flex items-center justify-center p-4">
+                <img
+                    src="/DashboardBG.jpg"
+                    alt="Background"
+                    className="max-w-full max-h-full object-contain"
+                />
+            </div>
         </div>
     );
 };
