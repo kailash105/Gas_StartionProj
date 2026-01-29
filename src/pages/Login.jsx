@@ -7,13 +7,20 @@ const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const { login, user } = useAuth();
     const navigate = useNavigate();
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (user) {
+            navigate('/dashboard');
+        }
+    }, [user, navigate]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (login(username, password)) {
-            navigate('/');
+            navigate('/dashboard');
         } else {
             setError('Invalid credentials');
         }
