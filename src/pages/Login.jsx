@@ -1,101 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
     const { login, user } = useAuth();
     const navigate = useNavigate();
 
-    // Redirect if already logged in
     useEffect(() => {
-        if (user) {
-            navigate('/dashboard');
-        }
+        if (user) navigate("/dashboard", { replace: true });
     }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
-
+        setError("");
         try {
-            await login(email, password); // 🔥 Firebase Auth
-            navigate('/dashboard');
+            await login(email, password);
         } catch (err) {
-            console.error("FIREBASE AUTH ERROR:", err);
-            console.log("ERROR CODE:", err.code);
-            console.log("ERROR MESSAGE:", err.message);
-            setError(err.code); // show real error
+            setError(err.code);
         }
-
         setLoading(false);
     };
 
     return (
-        <div
-            className="min-h-screen bg-cover bg-center flex items-center justify-center p-4"
-            style={{ backgroundImage: "url('/Background.jpg')" }}
-        >
-            <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-slate-200">
-                <div className="flex flex-col items-center mb-8">
-                    <img
-                        src="/Logo.png"
-                        alt="Gas Station Logo"
-                        className="w-32 h-32 object-contain mb-4"
-                    />
-                    <h1 className="text-2xl font-bold text-slate-800">Login</h1>
-                    <p className="text-orange-500">SAI BALAJI FILLING STATION</p>
-                </div>
+        <div className="min-h-screen flex items-center justify-center bg-slate-100">
+            <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow max-w-md w-full">
+                <h1 className="text-2xl font-bold text-center mb-6">SAI BALAJI FILLING STATION</h1>
 
-                {error && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-100">
-                        {error}
-                    </div>
-                )}
+                {error && <div className="bg-red-100 text-red-600 p-2 rounded mb-4">{error}</div>}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            placeholder="Enter email"
-                            required
-                        />
-                    </div>
+                <input className="w-full p-3 border rounded mb-4"
+                    type="email" placeholder="Email" value={email}
+                    onChange={(e) => setEmail(e.target.value)} required />
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Password
-                        </label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            placeholder="Enter password"
-                            required
-                        />
-                    </div>
+                <input className="w-full p-3 border rounded mb-6"
+                    type="password" placeholder="Password" value={password}
+                    onChange={(e) => setPassword(e.target.value)} required />
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-2 disabled:opacity-60"
-                    >
-                        {loading ? 'Signing in...' : 'Sign In'}
-                    </button>
-                </form>
-            </div>
+                <button disabled={loading}
+                    className="w-full bg-blue-600 text-white py-3 rounded font-semibold">
+                    {loading ? "Signing in..." : "Login"}
+                </button>
+            </form>
         </div>
     );
 };

@@ -1,21 +1,22 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
-import { AuthProvider } from './context/AuthContext';
-import { Layout } from './components/Layout/Layout';
-import ProtectedRoute from './components/Auth/ProtectedRoute';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Readings from './pages/Readings';
-import Customers from './pages/Customers';
-import CustomerDetails from './pages/CustomerDetails';
-import Staff from './pages/Staff';
-import Expenses from './pages/Expenses';
-import Approvals from './pages/Approvals';
-import Attendance from './pages/Attendance';
-import Leaves from './pages/Leaves';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { AppProvider } from "./context/AppContext";
+import ProtectedRoute from "./components/Auth/ProtectedRoute";
+import { Layout } from "./components/Layout/Layout";
 
-function App() {
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Readings from "./pages/Readings";
+import Customers from "./pages/Customers";
+import CustomerDetails from "./pages/CustomerDetails";
+import Expenses from "./pages/Expenses";
+import Attendance from "./pages/Attendance";
+import Leaves from "./pages/Leaves";
+import Staff from "./pages/Staff";
+import Approvals from "./pages/Approvals";
+
+export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -24,74 +25,56 @@ function App() {
             <Route path="/" element={<Login />} />
 
             <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
+              <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                <Layout><Dashboard /></Layout>
               </ProtectedRoute>
             } />
 
             <Route path="/readings" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Readings />
-                </Layout>
+              <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                <Layout><Readings /></Layout>
               </ProtectedRoute>
             } />
 
             <Route path="/customers" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Customers />
-                </Layout>
+              <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                <Layout><Customers /></Layout>
               </ProtectedRoute>
             } />
 
             <Route path="/customers/:id" element={
-              <ProtectedRoute>
-                <Layout>
-                  <CustomerDetails />
-                </Layout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/staff" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Staff />
-                </Layout>
+              <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                <Layout><CustomerDetails /></Layout>
               </ProtectedRoute>
             } />
 
             <Route path="/expenses" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Expenses />
-                </Layout>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/approvals" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Approvals />
-                </Layout>
+              <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                <Layout><Expenses /></Layout>
               </ProtectedRoute>
             } />
 
             <Route path="/attendance" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Attendance />
-                </Layout>
+              <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                <Layout><Attendance /></Layout>
               </ProtectedRoute>
             } />
 
             <Route path="/leaves" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Leaves />
-                </Layout>
+              <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                <Layout><Leaves /></Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/approvals" element={
+              <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                <Layout><Approvals /></Layout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/staff" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Layout><Staff /></Layout>
               </ProtectedRoute>
             } />
           </Routes>
@@ -100,5 +83,3 @@ function App() {
     </BrowserRouter>
   );
 }
-
-export default App;
