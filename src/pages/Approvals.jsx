@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Check, X, FileText, Calendar } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import clsx from 'clsx';
+import { useAuth } from '../context/AuthContext';
 import {
     collection,
     addDoc,
     onSnapshot,
     updateDoc,
-    doc,
     query,
     orderBy,
+    doc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const Approvals = () => {
     const { user } = useAuth();
+
     const [approvals, setApprovals] = useState([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -30,7 +31,7 @@ const Approvals = () => {
         'Other',
     ];
 
-    // 🔥 REALTIME FIRESTORE SYNC
+    // 🔥 REALTIME SYNC
     useEffect(() => {
         const q = query(
             collection(db, 'approvals'),
@@ -38,14 +39,17 @@ const Approvals = () => {
         );
 
         const unsub = onSnapshot(q, snap => {
-            const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const list = snap.docs.map(d => ({
+                id: d.id,
+                ...d.data(),
+            }));
             setApprovals(list);
         });
 
         return unsub;
     }, []);
 
-    // ➕ RAISE TICKET (MANAGER)
+    // ➕ RAISE APPROVAL (MANAGER)
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -54,8 +58,11 @@ const Approvals = () => {
             description,
             category,
             status: 'Pending',
+
+            // ✅ SAFE FIELDS (NO undefined)
             createdByUid: user.uid,
-            createdByName: user.name,
+            createdByName: user?.name || 'Unknown',
+
             createdAt: new Date(),
         });
 
@@ -69,7 +76,7 @@ const Approvals = () => {
     const updateStatus = async (id, status) => {
         await updateDoc(doc(db, 'approvals', id), {
             status,
-            actionBy: user.name,
+            actionBy: user?.name || 'Admin',
             actionAt: new Date(),
         });
     };
@@ -81,10 +88,15 @@ const Approvals = () => {
 
     return (
         <div className="space-y-6">
+            {/* HEADER */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Finance Approvals</h1>
-                    <p className="text-slate-500">Manage and track finance requests</p>
+                    <h1 className="text-2xl font-bold text-slate-800">
+                        Finance Approvals
+                    </h1>
+                    <p className="text-slate-500">
+                        Manage and track finance requests
+                    </p>
                 </div>
 
                 {user.role === 'manager' && (
@@ -101,16 +113,20 @@ const Approvals = () => {
             {isFormOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl p-6 w-full max-w-md">
-                        <h2 className="text-xl font-bold mb-4">New Request</h2>
+                        <h2 className="text-xl font-bold mb-4">
+                            New Finance Request
+                        </h2>
+
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <input
                                 type="number"
+                                required
                                 value={amount}
                                 onChange={e => setAmount(e.target.value)}
                                 placeholder="Amount"
                                 className="w-full border p-2 rounded"
-                                required
                             />
+
                             <select
                                 value={category}
                                 onChange={e => setCategory(e.target.value)}
@@ -120,15 +136,20 @@ const Approvals = () => {
                                     <option key={c}>{c}</option>
                                 ))}
                             </select>
+
                             <textarea
+                                required
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
                                 placeholder="Description"
                                 className="w-full border p-2 rounded"
-                                required
                             />
+
                             <div className="flex justify-end gap-3">
-                                <button type="button" onClick={() => setIsFormOpen(false)}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsFormOpen(false)}
+                                >
                                     Cancel
                                 </button>
                                 <button className="bg-blue-600 text-white px-4 py-2 rounded">
@@ -141,39 +162,51 @@ const Approvals = () => {
             )}
 
             {/* LIST */}
-            <div className="bg-white border rounded-xl overflow-hidden">
+            <div className="bg-white rounded-xl border overflow-hidden">
                 {visibleApprovals.length === 0 ? (
                     <div className="p-8 text-center text-slate-500">
                         <FileText size={48} className="mx-auto opacity-20" />
-                        No requests
+                        No approval requests
                     </div>
                 ) : (
                     <div className="divide-y">
-                        {visibleApprovals.map(t => (
-                            <div key={t.id} className="p-4 flex justify-between">
+                        {visibleApprovals.map(a => (
+                            <div key={a.id} className="p-4 flex justify-between">
                                 <div>
-                                    <span className={clsx(
-                                        'text-xs px-2 py-1 rounded',
-                                        t.status === 'Pending' && 'bg-yellow-100',
-                                        t.status === 'Approved' && 'bg-green-100',
-                                        t.status === 'Rejected' && 'bg-red-100'
-                                    )}>
-                                        {t.status}
+                                    <span
+                                        className={clsx(
+                                            'px-2 py-1 text-xs rounded',
+                                            a.status === 'Pending' && 'bg-yellow-100',
+                                            a.status === 'Approved' && 'bg-green-100',
+                                            a.status === 'Rejected' && 'bg-red-100'
+                                        )}
+                                    >
+                                        {a.status}
                                     </span>
-                                    <h3 className="font-bold mt-2">{t.category} – ₹{t.amount}</h3>
-                                    <p className="text-sm text-slate-600">{t.description}</p>
+
+                                    <h3 className="font-bold mt-2">
+                                        ₹{a.amount} · {a.category}
+                                    </h3>
+
+                                    <p className="text-sm text-slate-600">
+                                        {a.description}
+                                    </p>
+
                                     <p className="text-xs text-slate-400">
-                                        {t.createdByName} · <Calendar size={12} className="inline" />{' '}
-                                        {new Date(t.createdAt.seconds * 1000).toLocaleDateString()}
+                                        {a.createdByName || 'Unknown'} ·{' '}
+                                        <Calendar size={12} className="inline" />{' '}
+                                        {a.createdAt?.seconds
+                                            ? new Date(a.createdAt.seconds * 1000).toLocaleDateString()
+                                            : ''}
                                     </p>
                                 </div>
 
-                                {user.role === 'admin' && t.status === 'Pending' && (
+                                {user.role === 'admin' && a.status === 'Pending' && (
                                     <div className="flex gap-2">
-                                        <button onClick={() => updateStatus(t.id, 'Approved')}>
+                                        <button onClick={() => updateStatus(a.id, 'Approved')}>
                                             <Check />
                                         </button>
-                                        <button onClick={() => updateStatus(t.id, 'Rejected')}>
+                                        <button onClick={() => updateStatus(a.id, 'Rejected')}>
                                             <X />
                                         </button>
                                     </div>

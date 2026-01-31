@@ -1,26 +1,51 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Search, ChevronRight, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+import {
+    collection,
+    addDoc,
+    onSnapshot,
+    query,
+    orderBy,
+    Timestamp,
+} from 'firebase/firestore';
+import { db } from '../firebase';
 
 const Customers = () => {
-    const { customers, setCustomers } = useAppContext();
     const navigate = useNavigate();
+
+    const [customers, setCustomers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [newCustomerName, setNewCustomerName] = useState('');
 
-    const handleAddCustomer = (e) => {
+    // 🔥 REALTIME FIRESTORE SYNC (KEY FIX)
+    useEffect(() => {
+        const q = query(
+            collection(db, 'customers'),
+            orderBy('createdAt', 'desc')
+        );
+
+        const unsub = onSnapshot(q, (snap) => {
+            const list = snap.docs.map(d => ({
+                id: d.id,
+                ...d.data(),
+            }));
+            setCustomers(list);
+        });
+
+        return unsub;
+    }, []);
+
+    const handleAddCustomer = async (e) => {
         e.preventDefault();
         if (!newCustomerName.trim()) return;
 
-        const newCustomer = {
-            id: Date.now().toString(),
-            name: newCustomerName,
-            createdAt: new Date().toISOString()
-        };
+        await addDoc(collection(db, 'customers'), {
+            name: newCustomerName.trim(),
+            createdAt: Timestamp.now(),
+        });
 
-        setCustomers([...customers, newCustomer]);
         setNewCustomerName('');
         setShowAddModal(false);
     };
@@ -44,7 +69,10 @@ const Customers = () => {
 
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-6">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={20}
+                    />
                     <input
                         type="text"
                         placeholder="Search customers..."
@@ -86,7 +114,7 @@ const Customers = () => {
                 )}
             </div>
 
-            {/* Simple Add Modal */}
+            {/* Add Customer Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl p-6 w-full max-w-md">

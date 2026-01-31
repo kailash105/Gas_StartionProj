@@ -150,8 +150,8 @@ const Expenses = () => {
                             <div key={e.id} className="p-4 flex justify-between">
                                 <div className="flex gap-4">
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${e.type === 'SALARY_ADVANCE'
-                                            ? 'bg-orange-50 text-orange-600'
-                                            : 'bg-red-50 text-red-600'
+                                        ? 'bg-orange-50 text-orange-600'
+                                        : 'bg-red-50 text-red-600'
                                         }`}>
                                         <Banknote size={20} />
                                     </div>

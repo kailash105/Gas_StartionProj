@@ -1,46 +1,71 @@
-const { onCall } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
 
 exports.createStaffUser = onCall(
-    {
-        region: "us-central1",
-    },
+    { region: "us-central1" },
     async (request) => {
-        const context = request.auth;
-        const data = request.data;
+        try {
+            const context = request.auth;
+            const data = request.data;
 
-        if (!context) {
-            throw new Error("Unauthenticated");
+            // 🔐 Auth check
+            if (!context) {
+                throw new HttpsError("unauthenticated", "Login required");
+            }
+
+            const adminUid = context.uid;
+
+            // 🔎 Verify admin role
+            const adminSnap = await admin
+                .firestore()
+                .doc(`users/${adminUid}`)
+                .get();
+
+            if (!adminSnap.exists || adminSnap.data().role !== "admin") {
+                throw new HttpsError(
+                    "permission-denied",
+                    "Only admin can create staff"
+                );
+            }
+
+            const { email, password, name } = data;
+
+            // 🛡️ Validate input
+            if (!email || !password || !name) {
+                throw new HttpsError(
+                    "invalid-argument",
+                    "Email, password and name are required"
+                );
+            }
+
+            // 🔐 Create Auth user
+            const userRecord = await admin.auth().createUser({
+                email,
+                password,
+                displayName: name,
+            });
+
+            // 🧾 Create Firestore profile
+            await admin.firestore().doc(`users/${userRecord.uid}`).set({
+                email,
+                name,
+                role: "staff", // staff = no login in UI
+                createdBy: adminUid,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            return { success: true, uid: userRecord.uid };
+        } catch (error) {
+            console.error("createStaffUser failed:", error);
+
+            // Convert unknown errors to Firebase-safe error
+            if (error instanceof HttpsError) {
+                throw error;
+            }
+
+            throw new HttpsError("internal", error.message);
         }
-
-        const adminUid = context.uid;
-
-        const adminDoc = await admin
-            .firestore()
-            .doc(`users/${adminUid}`)
-            .get();
-
-        if (!adminDoc.exists || adminDoc.data().role !== "admin") {
-            throw new Error("Only admin can create staff");
-        }
-
-        const { email, password, name } = data;
-
-        const userRecord = await admin.auth().createUser({
-            email,
-            password,
-        });
-
-        await admin.firestore().doc(`users/${userRecord.uid}`).set({
-            email,
-            name: name || "",
-            role: "staff",
-            createdBy: adminUid,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        return { success: true };
     }
 );
