@@ -10,6 +10,7 @@ import {
     query,
     orderBy,
     doc,
+    Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -39,31 +40,30 @@ const Approvals = () => {
         );
 
         const unsub = onSnapshot(q, snap => {
-            const list = snap.docs.map(d => ({
-                id: d.id,
-                ...d.data(),
-            }));
-            setApprovals(list);
+            setApprovals(
+                snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            );
         });
 
         return unsub;
     }, []);
 
-    // ➕ RAISE APPROVAL (MANAGER)
+    // ➕ RAISE APPROVAL (MANAGER / ADMIN)
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         await addDoc(collection(db, 'approvals'), {
+            type: 'GENERAL', // 🔑 default
             amount: Number(amount),
             description,
             category,
             status: 'Pending',
 
-            // ✅ SAFE FIELDS (NO undefined)
             createdByUid: user.uid,
-            createdByName: user?.name || 'Unknown',
+            createdByName: user.name || 'Unknown',
+            createdByRole: user.role,
 
-            createdAt: new Date(),
+            createdAt: Timestamp.now(),
         });
 
         setIsFormOpen(false);
@@ -72,13 +72,29 @@ const Approvals = () => {
         setCategory('Operational');
     };
 
-    // ✅ ADMIN ACTIONS
-    const updateStatus = async (id, status) => {
-        await updateDoc(doc(db, 'approvals', id), {
+    // ✅ ADMIN ACTION
+    const updateStatus = async (approval, status) => {
+        const ref = doc(db, 'approvals', approval.id);
+
+        await updateDoc(ref, {
             status,
-            actionBy: user?.name || 'Admin',
-            actionAt: new Date(),
+            actionBy: user.name || 'Admin',
+            actionAt: Timestamp.now(),
         });
+
+        // 🔥 STAFF ADVANCE LOGIC
+        if (status === 'Approved' && approval.type === 'STAFF_ADVANCE') {
+            // 1️⃣ Add to expenses
+            await addDoc(collection(db, 'expenses'), {
+                type: 'SALARY_ADVANCE',
+                staffId: approval.staffId,
+                description: `Advance to ${approval.staffName}`,
+                amount: approval.amount,
+                date: Timestamp.now(),
+                createdBy: user.name,
+                createdAt: Timestamp.now(),
+            });
+        }
     };
 
     const visibleApprovals =
@@ -99,7 +115,7 @@ const Approvals = () => {
                     </p>
                 </div>
 
-                {user.role === 'manager' && (
+                {(user.role === 'manager' || user.role === 'admin') && (
                     <button
                         onClick={() => setIsFormOpen(true)}
                         className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg"
@@ -193,20 +209,24 @@ const Approvals = () => {
                                     </p>
 
                                     <p className="text-xs text-slate-400">
-                                        {a.createdByName || 'Unknown'} ·{' '}
+                                        {a.createdByName} ·{' '}
                                         <Calendar size={12} className="inline" />{' '}
-                                        {a.createdAt?.seconds
-                                            ? new Date(a.createdAt.seconds * 1000).toLocaleDateString()
-                                            : ''}
+                                        {a.createdAt?.toDate().toLocaleDateString()}
                                     </p>
                                 </div>
 
                                 {user.role === 'admin' && a.status === 'Pending' && (
                                     <div className="flex gap-2">
-                                        <button onClick={() => updateStatus(a.id, 'Approved')}>
+                                        <button
+                                            onClick={() => updateStatus(a, 'Approved')}
+                                            className="text-green-600"
+                                        >
                                             <Check />
                                         </button>
-                                        <button onClick={() => updateStatus(a.id, 'Rejected')}>
+                                        <button
+                                            onClick={() => updateStatus(a, 'Rejected')}
+                                            className="text-red-600"
+                                        >
                                             <X />
                                         </button>
                                     </div>

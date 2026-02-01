@@ -7,6 +7,10 @@ import {
     onSnapshot,
     orderBy,
     query,
+    Timestamp,
+    doc,
+    updateDoc,
+    getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -18,25 +22,21 @@ const Expenses = () => {
     const [staff, setStaff] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [showAdvanceForm, setShowAdvanceForm] = useState(false);
-    const [viewImageObj, setViewImageObj] = useState(null);
 
-    // 🔄 REALTIME EXPENSES
+    // -------------------------
+    // REALTIME EXPENSES
+    // -------------------------
     useEffect(() => {
-        const q = query(
-            collection(db, 'expenses'),
-            orderBy('createdAt', 'desc')
-        );
-
+        const q = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'));
         const unsub = onSnapshot(q, snap => {
-            setExpenses(
-                snap.docs.map(d => ({ id: d.id, ...d.data() }))
-            );
+            setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         });
-
         return unsub;
     }, []);
 
-    // 🔄 STAFF LIST (FOR ADVANCE)
+    // -------------------------
+    // STAFF LIST
+    // -------------------------
     useEffect(() => {
         const unsub = onSnapshot(collection(db, 'staff'), snap => {
             setStaff(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -44,56 +44,13 @@ const Expenses = () => {
         return unsub;
     }, []);
 
-    // ➕ NORMAL EXPENSE
-    const handleAddExpense = async (e) => {
-        e.preventDefault();
-
-        await addDoc(collection(db, 'expenses'), {
-            type: 'EXPENSE',
-            description: formData.description,
-            amount: Number(formData.amount),
-            date: formData.date,
-            image: formData.image || null,
-            createdBy: user.name,
-            createdAt: new Date(),
-        });
-
-        setFormData(defaultExpenseForm);
-        setShowForm(false);
-    };
-
-    // ➕ STAFF ADVANCE
-    const handleAddAdvance = async (e) => {
-        e.preventDefault();
-        const selectedStaff = staff.find(s => s.id === advanceData.staffId);
-        if (!selectedStaff) return;
-
-        await addDoc(collection(db, 'expenses'), {
-            type: 'SALARY_ADVANCE',
-            description: `Advance to ${selectedStaff.name}`,
-            staffId: selectedStaff.id,
-            amount: Number(advanceData.amount),
-            date: advanceData.date,
-            createdBy: user.name,
-            createdAt: new Date(),
-        });
-
-        setAdvanceData(defaultAdvanceForm);
-        setShowAdvanceForm(false);
-    };
-
-    // 🗑 DELETE (ADMIN ONLY)
-    const handleDelete = async (id) => {
-        if (!confirm('Delete this entry?')) return;
-        await deleteDoc(collection(db, 'expenses').doc(id));
-    };
-
+    // -------------------------
     // FORM STATES
+    // -------------------------
     const defaultExpenseForm = {
         date: new Date().toISOString().split('T')[0],
         description: '',
         amount: '',
-        image: null,
     };
 
     const defaultAdvanceForm = {
@@ -105,24 +62,103 @@ const Expenses = () => {
     const [formData, setFormData] = useState(defaultExpenseForm);
     const [advanceData, setAdvanceData] = useState(defaultAdvanceForm);
 
+    // -------------------------
+    // ADD NORMAL EXPENSE
+    // -------------------------
+    const handleAddExpense = async (e) => {
+        e.preventDefault();
+
+        await addDoc(collection(db, 'expenses'), {
+            type: 'EXPENSE',
+            description: formData.description,
+            amount: Number(formData.amount),
+            date: Timestamp.fromDate(new Date(formData.date)),
+            createdBy: user?.name || user?.email || 'System',
+            createdAt: Timestamp.now(),
+        });
+
+        setFormData(defaultExpenseForm);
+        setShowForm(false);
+    };
+
+    // -------------------------
+    // ADD STAFF ADVANCE
+    // -------------------------
+    const handleAddAdvance = async (e) => {
+        e.preventDefault();
+
+        const selectedStaff = staff.find(s => s.id === advanceData.staffId);
+        if (!selectedStaff) return;
+
+        const amount = Number(advanceData.amount);
+
+        // -------------------------
+        // MANAGER → APPROVAL FLOW
+        // -------------------------
+        if (user.role === 'manager') {
+            await addDoc(collection(db, 'approvals'), {
+                type: 'SALARY_ADVANCE',
+                staffId: selectedStaff.id,
+                staffName: selectedStaff.name,
+                amount,
+                requestedBy: user?.name || user?.email || 'Manager',
+                date: Timestamp.fromDate(new Date(advanceData.date)),
+                status: 'Pending',
+                createdAt: Timestamp.now(),
+            });
+        }
+
+        // -------------------------
+        // ADMIN → DIRECT ADVANCE
+        // -------------------------
+        if (user.role === 'admin') {
+            // 1️⃣ Expense entry
+            await addDoc(collection(db, 'expenses'), {
+                type: 'SALARY_ADVANCE',
+                staffId: selectedStaff.id,
+                description: `Advance to ${selectedStaff.name}`,
+                amount,
+                date: Timestamp.fromDate(new Date(advanceData.date)),
+                approved: true,
+                createdBy: user?.name || user?.email || 'Admin',
+                createdAt: Timestamp.now(),
+            });
+
+            // 2️⃣ Salary deduction
+            const staffRef = doc(db, 'staff', selectedStaff.id);
+            const staffSnap = await getDoc(staffRef);
+            const staffData = staffSnap.data();
+
+            const prevAdvance = staffData.advanceTaken || 0;
+            const salary = staffData.salary || 0;
+            const newAdvance = prevAdvance + amount;
+
+            await updateDoc(staffRef, {
+                advanceTaken: newAdvance,
+                payableSalary: salary - newAdvance,
+            });
+        }
+
+        setAdvanceData(defaultAdvanceForm);
+        setShowAdvanceForm(false);
+    };
+
+    // -------------------------
+    // DELETE EXPENSE (ADMIN)
+    // -------------------------
+    const handleDelete = async (id) => {
+        if (!confirm('Delete this entry?')) return;
+        await deleteDoc(doc(db, 'expenses', id));
+    };
+
     return (
         <div>
-            {/* IMAGE VIEW */}
-            {viewImageObj && (
-                <div
-                    className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-                    onClick={() => setViewImageObj(null)}
-                >
-                    <img src={viewImageObj} className="max-h-[90vh] rounded-xl" />
-                </div>
-            )}
-
             {/* HEADER */}
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-slate-800">Expenses & Tips</h1>
+                <h1 className="text-2xl font-bold">Expenses</h1>
 
                 <div className="flex gap-2">
-                    {user.role === 'admin' && (
+                    {(user?.role === 'admin' || user?.role === 'manager') && (
                         <button
                             onClick={() => setShowAdvanceForm(true)}
                             className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -140,58 +176,36 @@ const Expenses = () => {
                 </div>
             </div>
 
-            {/* LIST */}
-            <div className="bg-white rounded-xl border">
+            {/* EXPENSE LIST */}
+            <div className="bg-white rounded-xl border divide-y">
                 {expenses.length === 0 ? (
-                    <div className="p-8 text-center text-slate-500">No expenses recorded</div>
-                ) : (
-                    <div className="divide-y">
-                        {expenses.map(e => (
-                            <div key={e.id} className="p-4 flex justify-between">
-                                <div className="flex gap-4">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${e.type === 'SALARY_ADVANCE'
-                                        ? 'bg-orange-50 text-orange-600'
-                                        : 'bg-red-50 text-red-600'
-                                        }`}>
-                                        <Banknote size={20} />
-                                    </div>
-
-                                    <div>
-                                        <h3 className="font-semibold">
-                                            {e.description}
-                                            {e.type === 'SALARY_ADVANCE' && (
-                                                <span className="ml-2 text-xs bg-orange-100 px-2 rounded">
-                                                    ADVANCE
-                                                </span>
-                                            )}
-                                        </h3>
-                                        <p className="text-xs text-slate-500">
-                                            {new Date(e.date).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-4">
-                                    <span className="font-bold">₹{e.amount}</span>
-
-                                    {e.image && (
-                                        <button onClick={() => setViewImageObj(e.image)}>
-                                            <Banknote size={16} />
-                                        </button>
-                                    )}
-
-                                    {user.role === 'admin' && (
-                                        <button
-                                            onClick={() => handleDelete(e.id)}
-                                            className="text-red-500"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                    <div className="p-8 text-center text-slate-500">
+                        No expenses recorded
                     </div>
+                ) : (
+                    expenses.map(e => (
+                        <div key={e.id} className="p-4 flex justify-between">
+                            <div>
+                                <h3 className="font-semibold">{e.description}</h3>
+                                <p className="text-xs text-slate-500">
+                                    {e.date?.toDate().toLocaleDateString()}
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <span className="font-bold">₹{e.amount}</span>
+
+                                {user?.role === 'admin' && (
+                                    <button
+                                        onClick={() => handleDelete(e.id)}
+                                        className="text-red-500"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))
                 )}
             </div>
 
@@ -226,17 +240,6 @@ const Expenses = () => {
                                 required
                             />
 
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={e => {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () =>
-                                        setFormData({ ...formData, image: reader.result });
-                                    reader.readAsDataURL(e.target.files[0]);
-                                }}
-                            />
-
                             <div className="flex justify-end gap-3">
                                 <button type="button" onClick={() => setShowForm(false)}>
                                     Cancel
@@ -255,7 +258,7 @@ const Expenses = () => {
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl p-6 w-full max-w-md">
                         <h2 className="text-xl font-bold mb-4 text-orange-700">
-                            Record Staff Advance
+                            Staff Advance
                         </h2>
 
                         <form onSubmit={handleAddAdvance} className="space-y-4">
@@ -294,7 +297,7 @@ const Expenses = () => {
                                     Cancel
                                 </button>
                                 <button className="bg-orange-600 text-white px-4 py-2 rounded">
-                                    Record
+                                    Submit
                                 </button>
                             </div>
                         </form>
